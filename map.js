@@ -253,3 +253,5 @@ function createArrowTrace(lon1, lat1, lon2, lat2, color) {
         Math.max(latArrowLeft, latArrowRight)+arrowWidth*0.1]
 ]; // Devuelve los límites de la flecha
 }
+
+// test
