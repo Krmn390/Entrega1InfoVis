@@ -1,5 +1,5 @@
 async function fetchData() {
-    const response = await fetch("bird_migration_v2.csv");
+    const response = await fetch("bird_migration_v4.csv");
     const data = await response.text();
 
     const rows = data.split("\n").slice(1);
@@ -117,8 +117,10 @@ fetchData().then(data => {
                 title: 'Velocidad',
                 titleside: 'right',
                 ticksuffix: ' km/h',  // Unidades de velocidad
+                len: 0.5,  // Longitud de la barra de colores
                 tickvals: [lowSpeed, midSpeed, highSpeed],  // Etiquetas de los puntos medios
                 ticktext: [`Baja (${lowSpeed} mph)`, `Media (${midSpeed} mph)`, `Alto (${highSpeed}) mph)`],  // Etiquetas personalizadas
+                x: 0.75,  // Posición horizontal
             }
         },
         showlegend: false  // No muestra leyenda porque ya tiene el colorbar
@@ -133,14 +135,14 @@ fetchData().then(data => {
             family: "Arial, sans-serif"
         },
         annotations: [{
-            text: "Velocidad de migración de gaviotas en diferentes partes del mundo",
+            text: "Velocidad y trayectoria de una gaviota en Europa y África",
               font: {
               size: 20,
               color: 'rgb(116, 101, 130)',
             },
             showarrow: false,
             align: 'center',
-            x: 0.6,
+            x: 0.5,
             y: 1.1,
           }],
         showlegend: false,
