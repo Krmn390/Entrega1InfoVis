@@ -134,7 +134,7 @@ fetchData().then(data => {
     traces.push(colorScaleTrace);
 
     const layout = {
-        title: "Migración de Gaviotas",
+        title: "Migración de Gaviota",
         titlefont: {
             size: 24,
             family: "Arial, sans-serif"
