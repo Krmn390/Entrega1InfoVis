@@ -33,6 +33,8 @@ fetchData().then(data => {
     const maxLong = Math.max(...data.longitude);
     const minLat = Math.min(...data.latitude);
     const maxLat = Math.max(...data.latitude);
+    const arrowAreas=[];
+
 
     // // Evita división por cero ajustando el rango
     // if (minSpeed === maxSpeed) {
@@ -56,6 +58,39 @@ fetchData().then(data => {
         };
 
         traces.push(lineTrace);
+
+        // Agregar flechas manualmente
+        if (i % 2 == 0) {
+            const [arrowTrace, arrowlimits] = createArrowTrace(
+                data.longitude[i],
+                data.latitude[i],
+                data.longitude[i + 1],
+                data.latitude[i + 1],
+                color
+            );
+
+            let overlapping = false;
+
+            // Verificar si la flecha se solapa con áreas anteriores
+            for (let ocupiedArea of arrowAreas) {
+                if (
+                    arrowlimits[0] < ocupiedArea[2] &&
+                    arrowlimits[2] > ocupiedArea[0] &&
+                    arrowlimits[1] < ocupiedArea[3] &&
+                    arrowlimits[3] > ocupiedArea[1]
+                ) {
+                    overlapping = true;
+                    break;  // Si hay un solapamiento, no hace falta seguir verificando
+                }
+            }
+
+            // Solo agregar la flecha si no se solapa con otras áreas
+            if (!overlapping) {
+                arrowAreas.push(arrowlimits);
+                traces.push(arrowTrace);
+            }
+        }
+
     }
 
     // Trace adicional para la barra de colores (colorbar)
@@ -93,6 +128,21 @@ fetchData().then(data => {
 
     const layout = {
         title: "Migración de Gaviotas",
+        titlefont: {
+            size: 24,
+            family: "Arial, sans-serif"
+        },
+        annotations: [{
+            text: "Velocidad de migración de gaviotas en diferentes partes del mundo",
+              font: {
+              size: 20,
+              color: 'rgb(116, 101, 130)',
+            },
+            showarrow: false,
+            align: 'center',
+            x: 0.6,
+            y: 1.1,
+          }],
         showlegend: false,
         geo: {
             scope: "world",
@@ -117,7 +167,7 @@ fetchData().then(data => {
         margin: {
             l: 50,  // Ajusta los márgenes para que el colorbar no afecte el mapa
             r: 50,
-            t: 50,
+            t: 150,
             b: 50
         },
         // annotations: [{
@@ -144,36 +194,6 @@ fetchData().then(data => {
 
 // Función para obtener el color continuo basado en la velocidad
 function getColorForSpeedContinuous(speed, minSpeed, maxSpeed) {
-    // const ratio = (speed - minSpeed) / (maxSpeed - minSpeed);
-
-    // if (ratio < 0.5) {
-    //     const normalized = ratio * 2;
-    //     const r = Math.floor(255 * (normalized));
-    //     const g = Math.floor(255 * (normalized));
-    //     const b = Math.floor(255 * (1 - normalized));
-    //     return `rgb(${r}, ${g}, ${b})`; // Usa backticks para interpolar variables
-    // } else {
-    //     const normalized = 2*(1-ratio);
-    //     const r = 255;
-    //     const g = Math.floor(255 * (1 - normalized));
-    //     const b = 0;
-    //     return `rgb(${r}, ${g}, ${b})`; // Usa backticks aquí también
-    // }
-
-    // const minR = 255;
-    // const minG = 0;
-    // const minB = 0;
-    // const maxR = 255;
-    // const maxG = 255;
-    // const maxB = 0;
-
-    // const minR = 0;
-    // const minG = 255;
-    // const minB = 0;
-    // const maxR = 0;
-    // const maxG = 0;
-    // const maxB = 255;
-
     const minR = 0;
     const minG = 0;
     const minB = 255;
@@ -187,4 +207,47 @@ function getColorForSpeedContinuous(speed, minSpeed, maxSpeed) {
     const b = minB + (maxB - minB) * ratio;
 
     return `rgb(${r}, ${g}, ${b})`;
+}
+
+// Función para crear una flecha manualmente con ángulos de 30 grados respecto a la línea de trayectoria
+function createArrowTrace(lon1, lat1, lon2, lat2, color) {
+    const arrowScale = 0.3;  // Escala para el tamaño de la flecha
+    const angleInRadians = 30 * (Math.PI / 180);  // Convertimos 30 grados a radianes
+
+    // Diferencias en longitudes y latitudes (dirección del segmento)
+    const dx = lon2 - lon1;
+    const dy = lat2 - lat1;
+    const length = Math.sqrt(dx * dx + dy * dy);  // Longitud del segmento
+    const normDx = (dx / length) * arrowScale;  // Normalizamos y escalamos la dirección en x
+    const normDy = (dy / length) * arrowScale;  // Normalizamos y escalamos la dirección en y
+
+    // Ahora aplicamos una rotación de 30 grados para la base de la flecha (triángulo)
+    const lonArrowLeft = lon2 - (normDx * Math.cos(angleInRadians) - normDy * Math.sin(angleInRadians));
+    const latArrowLeft = lat2 - (normDx * Math.sin(angleInRadians) + normDy * Math.cos(angleInRadians));
+
+    const lonArrowRight = lon2 - (normDx * Math.cos(-angleInRadians) - normDy * Math.sin(-angleInRadians));
+    const latArrowRight = lat2 - (normDx * Math.sin(-angleInRadians) + normDy * Math.cos(-angleInRadians));
+
+    // Creamos el triángulo de la flecha con 3 puntos
+    const lonArrow = [lonArrowLeft, lon2, lonArrowRight];  // Coordenadas longitud de los 3 puntos
+    const latArrow = [latArrowLeft, lat2, latArrowRight];  // Coordenadas latitud de los 3 puntos
+
+    const arrowWidth = 4;  // Ancho de la flecha
+
+    return [
+        {
+        type: "scattergeo",
+        mode: "lines",  // Usamos líneas para dibujar el triángulo (flecha)
+        lon: lonArrow,
+        lat: latArrow,
+        line: {
+            width: arrowWidth,
+            color: color  // El mismo color de la línea de trayectoria
+        },
+        showlegend: false
+    }, [Math.min(lonArrowLeft, lonArrowRight)-arrowWidth*0.1, 
+        Math.min(latArrowLeft, latArrowRight)-arrowWidth*0.1, 
+        Math.max(lonArrowLeft, lonArrowRight)+arrowWidth*0.1, 
+        Math.max(latArrowLeft, latArrowRight)+arrowWidth*0.1]
+]; // Devuelve los límites de la flecha
 }
