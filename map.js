@@ -124,7 +124,7 @@ fetchData().then(data => {
                 ticksuffix: ' km/h',  // Unidades de velocidad
                 len: 0.5,  // Longitud de la barra de colores
                 tickvals: [lowSpeed, midSpeed, highSpeed],  // Etiquetas de los puntos medios
-                ticktext: [`Baja (${lowSpeed} mph)`, `Media (${midSpeed} mph)`, `Alta (${highSpeed}) mph)`],  // Etiquetas personalizadas
+                ticktext: [`Baja (${lowSpeed} mph)`, `Media (${midSpeed} mph)`, `Alta (${highSpeed} mph)`],  // Etiquetas personalizadas
                 x: 0.75,  // Posición horizontal
             }
         },
