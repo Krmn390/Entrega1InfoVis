@@ -29,29 +29,51 @@ fetchData().then(data => {
     const traces = [];
     const minSpeed = Math.min(...data.speed);
     const maxSpeed = Math.max(...data.speed);
+    const minLong = Math.min(...data.longitude);
+    const maxLong = Math.max(...data.longitude);
+    const minLat = Math.min(...data.latitude);
+    const maxLat = Math.max(...data.latitude);
 
-    // Evita división por cero ajustando el rango
-    if (minSpeed === maxSpeed) {
-        minSpeed -= 1;
-    }
+    // // Evita división por cero ajustando el rango
+    // if (minSpeed === maxSpeed) {
+    //     minSpeed -= 1;
+    // }
 
     // Crear trazos para las líneas de migración
     for (let i = 0; i < data.latitude.length - 1; i++) {
         let speed = data.speed[i];
         let color = getColorForSpeedContinuous(speed, minSpeed, maxSpeed);
 
-        let trace = {
+        let lineTrace = {
             type: "scattergeo",
             lon: [data.longitude[i], data.longitude[i + 1]],
             lat: [data.latitude[i], data.latitude[i + 1]],
-            mode: "lines",
+            mode: "lines+markers",
             line: {
-                width: 2,
-                color: color  // Cambia el color basado en la velocidad continua
-            }
+                width: 6,
+                color: color // Cambia el color basado en la velocidad continua
+                //dash: "5px,10px,2px,2px"
+            },
+            // marker: {
+            //     symbol: "arrow-bar",
+            //     size: 10,
+            //     color: "blue"
+            // }
         };
 
-        traces.push(trace);
+        // let triangleTrace = {
+        //     type: "scattergeo",
+        //     lon: [data.longitude[i]],
+        //     lat: [data.latitude[i]],
+        //     marker: {
+        //         symbol: "arrow-bar",
+        //         size: 10,
+        //         color: "blue"
+        //     }
+        // };
+
+        traces.push(lineTrace);
+        // traces.push(triangleTrace);
     }
 
     // Trace adicional para la barra de colores (colorbar)
@@ -95,18 +117,18 @@ fetchData().then(data => {
             scope: "world",
             projection: {
                 type: "azimuthal equal area",
-                scale: 5
+                scale: 11
             },
             center: {
-                lon: data.longitude[Math.floor(data.longitude.length / 2)],
-                lat: data.latitude[Math.floor(data.latitude.length / 2)]
+                lon: (minLong + maxLong)/2,
+                lat: (minLat + maxLat)/2
             },
             showland: true,
-            landcolor: 'rgb(243, 243, 243)',
-            countrycolor: 'rgb(204, 204, 204)',
+            landcolor: 'rgb(220,220,220)',
+            countrycolor: 'rgb(255, 255, 255)',
             showcountries: true,
             showcoastlines: true,
-            showframe: false,
+            showframe: true,
             fitbounds: false,  // Desactiva ajuste automático del zoom
             dragmode: false,
             zoom: false,
@@ -129,19 +151,33 @@ fetchData().then(data => {
 
 // Función para obtener el color continuo basado en la velocidad
 function getColorForSpeedContinuous(speed, minSpeed, maxSpeed) {
-    const ratio = (speed - minSpeed) / (maxSpeed - minSpeed);
+    // const ratio = (speed - minSpeed) / (maxSpeed - minSpeed);
 
-    if (ratio < 0.5) {
-        const normalized = ratio * 2;
-        const r = Math.floor(255 * (normalized));
-        const g = Math.floor(255 * (normalized));
-        const b = Math.floor(255 * (1 - normalized));
-        return `rgb(${r}, ${g}, ${b})`; // Usa backticks para interpolar variables
-    } else {
-        const normalized = 2*(1-ratio);
-        const r = 255;
-        const g = Math.floor(255 * (1 - normalized));
-        const b = 0;
-        return `rgb(${r}, ${g}, ${b})`; // Usa backticks aquí también
-    }
+    // if (ratio < 0.5) {
+    //     const normalized = ratio * 2;
+    //     const r = Math.floor(255 * (normalized));
+    //     const g = Math.floor(255 * (normalized));
+    //     const b = Math.floor(255 * (1 - normalized));
+    //     return `rgb(${r}, ${g}, ${b})`; // Usa backticks para interpolar variables
+    // } else {
+    //     const normalized = 2*(1-ratio);
+    //     const r = 255;
+    //     const g = Math.floor(255 * (1 - normalized));
+    //     const b = 0;
+    //     return `rgb(${r}, ${g}, ${b})`; // Usa backticks aquí también
+    // }
+
+    const minR = 255;
+    const minG = 0;
+    const minB = 0;
+    const maxR = 255;
+    const maxG = 200;
+    const maxB = 200;
+    const ratio = 1 - (speed - minSpeed) / (maxSpeed - minSpeed);
+
+    const r = minR + (maxR - minR) * ratio;
+    const g = minG + (maxG - minG) * ratio;
+    const b = minB + (maxB - minB) * ratio;
+
+    return `rgb(${r}, ${g}, ${b})`;
 }
