@@ -115,11 +115,16 @@ fetchData().then(data => {
             ],
             colorbar: {
                 title: 'Velocidad',
-                titleside: 'right',
+                titleside: 'top',
+                titlefont: {
+                    size: 18,        // Tamaño de la fuente
+                    family: 'Arial', // Familia de la fuente
+                    weight: 'bold'   // Estilo en negrita
+                },
                 ticksuffix: ' km/h',  // Unidades de velocidad
                 len: 0.5,  // Longitud de la barra de colores
                 tickvals: [lowSpeed, midSpeed, highSpeed],  // Etiquetas de los puntos medios
-                ticktext: [`Baja (${lowSpeed} mph)`, `Media (${midSpeed} mph)`, `Alto (${highSpeed}) mph)`],  // Etiquetas personalizadas
+                ticktext: [`Baja (${lowSpeed} mph)`, `Media (${midSpeed} mph)`, `Alta (${highSpeed} mph)`],  // Etiquetas personalizadas
                 x: 0.75,  // Posición horizontal
             }
         },
@@ -213,7 +218,7 @@ function getColorForSpeedContinuous(speed, minSpeed, maxSpeed) {
 
 // Función para crear una flecha manualmente con ángulos de 30 grados respecto a la línea de trayectoria
 function createArrowTrace(lon1, lat1, lon2, lat2, color) {
-    const arrowScale = 0.3;  // Escala para el tamaño de la flecha
+    const arrowScale = 0.4;  // Escala para el tamaño de la flecha
     const angleInRadians = 30 * (Math.PI / 180);  // Convertimos 30 grados a radianes
 
     // Diferencias en longitudes y latitudes (dirección del segmento)
