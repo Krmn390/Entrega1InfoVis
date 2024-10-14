@@ -1,5 +1,5 @@
 async function fetchData() {
-    const response = await fetch("bird_migration_v2.csv");
+    const response = await fetch("bird_migration_v4.csv");
     const data = await response.text();
 
     const rows = data.split("\n").slice(1);
