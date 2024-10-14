@@ -48,38 +48,20 @@ fetchData().then(data => {
             type: "scattergeo",
             lon: [data.longitude[i], data.longitude[i + 1]],
             lat: [data.latitude[i], data.latitude[i + 1]],
-            mode: "lines+markers",
+            mode: "lines",
             line: {
-                width: 6,
-                color: color // Cambia el color basado en la velocidad continua
-                //dash: "5px,10px,2px,2px"
-            },
-            // marker: {
-            //     symbol: "arrow-bar",
-            //     size: 10,
-            //     color: "blue"
-            // }
+                width: 4,
+                color: color
+            }
         };
 
-        // let triangleTrace = {
-        //     type: "scattergeo",
-        //     lon: [data.longitude[i]],
-        //     lat: [data.latitude[i]],
-        //     marker: {
-        //         symbol: "arrow-bar",
-        //         size: 10,
-        //         color: "blue"
-        //     }
-        // };
-
         traces.push(lineTrace);
-        // traces.push(triangleTrace);
     }
 
     // Trace adicional para la barra de colores (colorbar)
-    const lowSpeed = minSpeed;
-    const midSpeed = (minSpeed + maxSpeed) / 2;
-    const highSpeed = maxSpeed;
+    const lowSpeed = minSpeed.toFixed(2);
+    const midSpeed = ((minSpeed + maxSpeed) / 2).toFixed(2);
+    const highSpeed = maxSpeed.toFixed(2);
 
     // Trace adicional para la barra de colores (colorbar)
     const colorScaleTrace = {
@@ -89,20 +71,19 @@ fetchData().then(data => {
         lon: [0], // Longitud arbitraria
         marker: {
             size: 0.1,  // Tamaño pequeño para no interferir
-            color: [lowSpeed, midSpeed, highSpeed],  // Rango de colores
+            color: [lowSpeed, highSpeed],  // Rango de colores
             cmin: lowSpeed,
             cmax: highSpeed,
             colorscale: [
-                [0, 'rgb(0, 0, 255)'],  // Color para velocidad baja
-                [0.5, 'rgb(255, 255, 0)'],  // Color para velocidad media
-                [1, 'rgb(255, 0, 0)']       // Color para velocidad alta
+                [0, 'rgb(255, 153, 21)'],  // Color para velocidad baja
+                [1, 'rgb(0, 0, 255)']       // Color para velocidad alta
             ],
             colorbar: {
                 title: 'Velocidad',
                 titleside: 'right',
                 ticksuffix: ' km/h',  // Unidades de velocidad
                 tickvals: [lowSpeed, midSpeed, highSpeed],  // Etiquetas de los puntos medios
-                ticktext: ['Baja', 'Media', 'Alta'],  // Etiquetas personalizadas
+                ticktext: [`Baja (${lowSpeed} mph)`, `Media (${midSpeed} mph)`, `Alto (${highSpeed}) mph)`],  // Etiquetas personalizadas
             }
         },
         showlegend: false  // No muestra leyenda porque ya tiene el colorbar
@@ -138,7 +119,19 @@ fetchData().then(data => {
             r: 50,
             t: 50,
             b: 50
-        }
+        },
+        // annotations: [{
+        //     x: 0,
+        //     y: 0,
+        //     xref: "paper",
+        //     yref: "paper",
+        //     text: 'This scatter plot displays the locations of major global cities, highlighting their geographic distribution.',
+        //     showarrow: false,
+        //     font: {
+        //         size: 12,
+        //         color: 'black'
+        //     }
+        // }]
     };
 
     const config = {
@@ -167,13 +160,27 @@ function getColorForSpeedContinuous(speed, minSpeed, maxSpeed) {
     //     return `rgb(${r}, ${g}, ${b})`; // Usa backticks aquí también
     // }
 
-    const minR = 255;
+    // const minR = 255;
+    // const minG = 0;
+    // const minB = 0;
+    // const maxR = 255;
+    // const maxG = 255;
+    // const maxB = 0;
+
+    // const minR = 0;
+    // const minG = 255;
+    // const minB = 0;
+    // const maxR = 0;
+    // const maxG = 0;
+    // const maxB = 255;
+
+    const minR = 0;
     const minG = 0;
-    const minB = 0;
+    const minB = 255;
     const maxR = 255;
-    const maxG = 200;
-    const maxB = 200;
-    const ratio = 1 - (speed - minSpeed) / (maxSpeed - minSpeed);
+    const maxG = 153;
+    const maxB = 21;
+    const ratio = 1-(speed - minSpeed) / (maxSpeed - minSpeed);
 
     const r = minR + (maxR - minR) * ratio;
     const g = minG + (maxG - minG) * ratio;
