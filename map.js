@@ -128,6 +128,21 @@ fetchData().then(data => {
 
     const layout = {
         title: "Migración de Gaviotas",
+        titlefont: {
+            size: 24,
+            family: "Arial, sans-serif"
+        },
+        annotations: [{
+            text: "Velocidad de migración de gaviotas en diferentes partes del mundo",
+              font: {
+              size: 20,
+              color: 'rgb(116, 101, 130)',
+            },
+            showarrow: false,
+            align: 'center',
+            x: 0.6,
+            y: 1.1,
+          }],
         showlegend: false,
         geo: {
             scope: "world",
@@ -152,7 +167,7 @@ fetchData().then(data => {
         margin: {
             l: 50,  // Ajusta los márgenes para que el colorbar no afecte el mapa
             r: 50,
-            t: 50,
+            t: 150,
             b: 50
         },
         // annotations: [{
