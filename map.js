@@ -133,23 +133,58 @@ fetchData().then(data => {
 
     traces.push(colorScaleTrace);
 
+    const windRoseAnnotations = [
+        {
+            xref: "paper", yref: "paper", x: 0.95-0.60, y: 0.95, text: "N", showarrow: false,
+            font: {size: 12, color: "black"}
+        },
+        {
+            xref: "paper", yref: "paper", x: 0.973-0.60, y: 0.9, text: "E", showarrow: false,
+            font: {size: 12, color: "black"}
+        },
+        {
+            xref: "paper", yref: "paper", x: 0.95-0.60, y: 0.85, text: "S", showarrow: false,
+            font: {size: 12, color: "black"}
+        },
+        {
+            xref: "paper", yref: "paper", x: 0.92-0.60, y: 0.9, text: "W", showarrow: false,
+            font: {size: 12, color: "black"}
+        },
+        {
+            xref: "paper", yref: "paper", x: 0.95-0.60, y: 0.922, text: "+", showarrow: false,
+            font: {size: 30, color: "black"}
+        }
+    ];
+
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    const text = "Las gaviotas son aves migratorias que recorren grandes distancias entre Europa y África en busca de mejores condiciones para alimentarse y reproducirse. Su migración es estacional y sigue rutas definidas a lo largo de costas y mares. Estas aves enfrentan cambios climáticos y geográficos que influyen en sus patrones de vuelo.";
+    const maxLineWidth = 300;
+    const justifiedLines = justifyText(text, maxLineWidth, context);
+
+    const subtitleAnnotations = justifiedLines.map((line, index) => {
+        return {
+            text: line,
+            font: {
+                size: 13,
+                color: 'rgb(116, 101, 130)',
+            },
+            showarrow: false,
+            xref: "paper",
+            yref: "paper",
+            x: 0.5,  // Centrar horizontalmente
+            y: 1.2 - index * 0.05,  // Ajustar la posición vertical para cada línea
+            align: "center"
+        };
+    });
+
     const layout = {
         title: "Migración de Gaviota",
         titlefont: {
-            size: 24,
+            size: 40,
             family: "Arial, sans-serif"
         },
-        annotations: [{
-            text: "Velocidad y trayectoria de una gaviota en Europa y África",
-              font: {
-              size: 20,
-              color: 'rgb(116, 101, 130)',
-            },
-            showarrow: false,
-            align: 'center',
-            x: 0.5,
-            y: 1.1,
-          }],
+        annotations: windRoseAnnotations.concat(subtitleAnnotations),
         showlegend: false,
         geo: {
             scope: "world",
@@ -174,7 +209,7 @@ fetchData().then(data => {
         margin: {
             l: 50,  // Ajusta los márgenes para que el colorbar no afecte el mapa
             r: 50,
-            t: 150,
+            t: 180,
             b: 50
         },
         // annotations: [{
@@ -259,4 +294,58 @@ function createArrowTrace(lon1, lat1, lon2, lat2, color) {
 ]; // Devuelve los límites de la flecha
 }
 
-// test
+function justifyText(text, maxLineWidth, context) {
+    const words = text.split(' ');
+    let lines = [];
+    let currentLine = [];
+    let currentLineWidth = 0;
+
+    words.forEach((word) => {
+        const wordWidth = context.measureText(word + " ").width;
+
+        // Si la palabra cabe en la línea actual, la añadimos
+        if (currentLineWidth + wordWidth <= maxLineWidth) {
+            currentLine.push(word);
+            currentLineWidth += wordWidth;
+        } else {
+            // Línea completa, se pasa a la siguiente línea
+            lines.push(currentLine);
+            currentLine = [word];  // Empezamos una nueva línea con la palabra actual
+            currentLineWidth = wordWidth;
+        }
+    });
+
+    // Añadir la última línea si quedó algo pendiente
+    if (currentLine.length > 0) {
+        lines.push(currentLine);
+    }
+
+    // Justificar todas las líneas menos la última
+    const justifiedLines = lines.map((line, index) => {
+        if (index === lines.length - 1) {
+            return line.join(' ');  // La última línea no se justifica
+        }
+
+        // Justificamos las líneas anteriores
+        const totalWords = line.length;
+        const lineText = line.join(' ');
+        const lineWidth = context.measureText(lineText).width;
+        const extraSpace = maxLineWidth - lineWidth;
+
+        // Distribuir el espacio extra entre las palabras
+        const spacesBetweenWords = totalWords - 1;
+        const baseSpaceWidth = context.measureText(' ').width;
+        const additionalSpace = extraSpace / spacesBetweenWords;
+
+        // Aseguramos que haya al menos un espacio entre palabras
+        return line.map((word, i) => {
+            if (i < spacesBetweenWords) {
+                return word + ' '.repeat(1 + Math.floor(additionalSpace / baseSpaceWidth));
+            } else {
+                return word;
+            }
+        }).join('');
+    });
+
+    return justifiedLines;
+}
