@@ -75,6 +75,11 @@ async function buildPlot() {
                 width: 4,
                 color: season.color
             },
+            hoverlabel: {
+                font: {
+                    size: 20,
+                }
+            },
         };
 
         if (i == 1) {
