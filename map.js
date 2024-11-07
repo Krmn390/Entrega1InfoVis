@@ -232,7 +232,12 @@ async function buildPlot() {
 
     globalLayout = layout;
 
-    Plotly.newPlot("map", traces, layout);
+    const config = {
+        displayModeBar: true,
+        modeBarButtonsToRemove: ["pan2d", "select2d", "lasso2d"],
+    };
+
+    Plotly.newPlot("map", traces, layout, config);
 }
 
 function seasonColorInfo(monthNumber) {
