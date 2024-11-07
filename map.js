@@ -1,3 +1,15 @@
+// Global
+
+let globalTraces = null;
+let globalLayout = null
+const synth = new Tone.Synth().toDestination();
+let globalMinLat = null;
+let globalMaxLat = null;
+let globalSeagullData = null;
+let playingAnimation = false;
+
+// Data
+
 async function fetchData() {
     const response = await fetch("bird_migration_v4.csv");
     const data = await response.text();
@@ -12,7 +24,7 @@ async function fetchData() {
         const cols = row.split(",");
         const lat = parseFloat(cols[3]);
         const lon = parseFloat(cols[4]);
-        const dat = (new Date(cols[1])).getMonth();
+        const dat = (new Date(cols[1]));
 
         if (!isNaN(lat) && !isNaN(lon) && !isNaN(dat)) {
             latitude.push(lat);
@@ -27,8 +39,12 @@ async function fetchData() {
         date
     };
     
+    globalSeagullData = seagullData;
+
     return seagullData;
 }
+
+// Map
 
 async function buildPlot() {
 
@@ -39,16 +55,22 @@ async function buildPlot() {
     const maxLon = Math.max(...data.longitude);
     const minLat = Math.min(...data.latitude);
     const maxLat = Math.max(...data.latitude);
+    globalMinLat = minLat;
+    globalMaxLat = maxLat;
 
     for (let i = 0; i < data.latitude.length - 1; i++) {
-        let dat = data.date[i]
+        let dat = data.date[i].getMonth();
         let season = seasonColorInfo(dat);
 
         let lineTrace = {
             type: "scattergeo",
             lon: [data.longitude[i], data.longitude[i + 1]],
             lat: [data.latitude[i], data.latitude[i + 1]],
-            mode: "lines+text",
+            mode: "lines",
+            //text: `Fecha: ${data.date[i].toLocaleDateString("en-GB")}`,
+            hovertemplate: `Longitud: ${parseFloat(data.longitude[i]).toFixed(2)}\n` +
+                            `Latitud: ${parseFloat(data.latitude[i]).toFixed(2)}\n` +
+                            `Fecha: ${data.date[i].toLocaleDateString("en-GB")}`,
             line: {
                 width: 4,
                 color: season.color
@@ -56,27 +78,29 @@ async function buildPlot() {
         };
 
         if (i == 1) {
-            let offsetLon = 1;
-            let offsetLat = 0;
+            let offsetLon = 1.5;
+            let offsetLat = -0.5;
             let textTrace = {
                 type: "scattergeo",
                 mode: "markers+text",
                 lon: [data.longitude[i] + offsetLon],
                 lat: [data.latitude[i] + offsetLat],
-                text: ["<b>Punto de partida (verano)<b>"],
+                text: ["Punto de partida (verano)"],
                 textposition: "middle right",
                 marker: {
                     color: season.color,
+                    size: 8,
                 },
                 textfont: {
                     size: 17
                 },
+                hoverinfo: "skip",
             };
             traces.push(textTrace);
         }
 
         if (i == 10) {
-            let offsetLon = -1;
+            let offsetLon = -1.5;
             let offsetLat = 0;
             let textTrace = {
                 type: "scattergeo",
@@ -87,16 +111,18 @@ async function buildPlot() {
                 textposition: "middle left",
                 marker: {
                     color: season.color,
+                    size: 8,
                 },
                 textfont: {
                     size: 17
                 },
+                hoverinfo: "skip",
             };
             traces.push(textTrace);
         }
 
         if (i == 45) {
-            let offsetLon = 1;
+            let offsetLon = 1.5;
             let offsetLat = 0;
             let textTrace = {
                 type: "scattergeo",
@@ -107,16 +133,18 @@ async function buildPlot() {
                 textposition: "middle right",
                 marker: {
                     color: season.color,
+                    size: 8,
                 },
                 textfont: {
                     size: 17
                 },
+                hoverinfo: "skip",
             };
             traces.push(textTrace);
         }
 
         if (i == 75) {
-            let offsetLon = 1;
+            let offsetLon = 1.5;
             let offsetLat = 0;
             let textTrace = {
                 type: "scattergeo",
@@ -127,10 +155,12 @@ async function buildPlot() {
                 textposition: "middle right",
                 marker: {
                     color: season.color,
+                    size: 8,
                 },
                 textfont: {
                     size: 17
                 },
+                hoverinfo: "skip",
             };
             traces.push(textTrace);
         }
@@ -138,6 +168,8 @@ async function buildPlot() {
         traces.push(lineTrace);
 
     }
+
+    globalTraces = traces;
 
     const layout = {
         title: "Migración de Gaviota",
@@ -147,7 +179,7 @@ async function buildPlot() {
         },
         annotations: [
             {
-                text: "Trayectoria de una gaviota a lo largo del año",
+                text: "Trayectoria de una gaviota: Agosto-Abril",
                 font: {
                     size: 25,
                     color: 'rgb(116, 101, 130)',
@@ -188,7 +220,7 @@ async function buildPlot() {
             showframe: false,
             fitbounds: false,
             dragmode: false,
-            zoom: false,
+            zoom: true,
         },
         margin: {
             l: 50, 
@@ -198,11 +230,9 @@ async function buildPlot() {
         },
     };
 
-    const config = {
-        staticPlot: true 
-    };
+    globalLayout = layout;
 
-    Plotly.newPlot("map", traces, layout, config);
+    Plotly.newPlot("map", traces, layout);
 }
 
 function seasonColorInfo(monthNumber) {
@@ -226,7 +256,7 @@ function seasonColorInfo(monthNumber) {
         r = 245;
         g = 196;
         b = 23;
-        name = "Otoño";
+        name = "Primavera";
     }
     else if (summer.includes(monthNumber)) {
         r = 203;
@@ -238,7 +268,7 @@ function seasonColorInfo(monthNumber) {
         r = 73;
         g = 136;
         b = 229;
-        name = "Primavera";
+        name = "Otoño";
     }
     else {
         console.log("Invalid month number");
@@ -250,91 +280,136 @@ function seasonColorInfo(monthNumber) {
 
 }
 
-// function dataBySeason(data) {
-//     const winter = [12, 1, 2];
-//     const spring = [3, 4, 5];
-//     const summer = [6, 7, 8];
-//     const autumn = [9, 10, 11];
+function resetPlot() {
+    Plotly.react("map", globalTraces, globalLayout);
+}
 
-//     let winterDate = [];
-//     let winterLat = [];
-//     let winterLon = [];
-//     let springDate = [];
-//     let springLat = [];
-//     let springLon = [];
-//     let summerDate = [];
-//     let summerLat = [];
-//     let summerLon = [];
-//     let autumnDate = [];
-//     let autumnLat = [];
-//     let autumnLon = [];
+buildPlot();
 
-//     for (let i = 0; i < data.latitude.length; i++) {
-//         let month = data.date[i];
-//         let lat = data.latitude[i];
-//         let lon = data.longitude[i];
+// Text to speech
 
-//         if (winter.includes(month)) {
-//             winterDate.push(month);
-//             winterLat.push(lat);
-//             winterLon.push(lon);
-//         }
-//         else if (spring.includes(month)) {
-//             springDate.push(month);
-//             springLat.push(lat);
-//             springLon.push(lon);
-//         }
-//         else if (summer.includes(month)) {
-//             summerDate.push(month);
-//             summerLat.push(lat);
-//             summerLon.push(lon);
-//         }
-//         else if (autumn.includes(month)) {
-//             autumnDate.push(month);
-//             autumnLat.push(lat);
-//             autumnLon.push(lon);
-//         }
-//         else {
-//             console.log("Invalid month number");
-//         }
-//     }
+function speak(text) {
+    speechSynthesis.cancel()
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "es-ES";
+    utterance.rate = 0.7;
+    window.speechSynthesis.speak(utterance);
+}
 
-//     let winterData = {
-//         date: winterDate,
-//         longitude: winterLon,
-//         latitude: winterLat,
-//     };
+// Tone
 
-//     let springData = {
-//         date: springDate,
-//         longitude: springLat,
-//         latitude: springLon,
-//     };
+let queue = [];
 
-//     let summerData = {
-//         date: summerDate,
-//         longitude: summerLon,
-//         latitude: summerLat,
-//     };
+function disableBtn(id) {
+    document.getElementById(id).disabled = true;
+}
 
-//     let autumnData = {
-//         date: autumnDate,
-//         longitude: autumnLon,
-//         latitude: autumnLat,
-//     };
+function enableBtn(id) {
+    document.getElementById(id).disabled = false;
+} 
 
-//     let filteredData = {
-//         winter: winterData,
-//         spring: springData,
-//         summer: summerData,
-//         autumn: autumnData,
-//     };
+document.getElementById("tone").addEventListener("click", () => {
+    if (Tone.context.state !== "running") {
+        Tone.start();
+    }
+    if (!playingAnimation) {
+        playingAnimation = true;
+        disableBtn("tone");
+        enableBtn("stop");
+        triggerTone();
+    }
+})
 
-//     return filteredData;
-// }
+document.getElementById("stop").addEventListener("click", () => {
+    queue = [];
+})
 
-// function proportion(value, min, max, offset) {
-//     return ((value - min) / (max - min)) + offset;
-// }
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
-buildPlot()
+function proportion(value, min, max, offset) {
+    return ((value - min) / (max - min)) + offset;
+}
+
+function latitudeToFreq(lat) {
+    const minFreq = 300;
+    const maxFreq = 500;
+    const minLat = globalMinLat;
+    const maxLat = globalMaxLat;
+
+    const latProp = proportion(lat, minLat, maxLat, 0);
+    const freqStep = (maxFreq - minFreq) * latProp;
+    return minFreq + freqStep;
+}
+
+async function triggerTone() {
+
+    const latitudes = globalSeagullData.latitude;
+    const longitudes = globalSeagullData.longitude;
+    const dates = globalSeagullData.date;
+
+    // Insert frequencies to play in queue
+
+    for (let i = 0; i < 90; i+=2) {
+        const freqToPlay = latitudeToFreq(latitudes[i]);
+        const dataToQueue = {
+            freq: freqToPlay,
+            lat: latitudes[i],
+            lon: longitudes[i],
+            dat: dates[i],
+        }
+        queue.push(dataToQueue);
+    }
+
+    // Play frequencies in queue
+
+    let currentSeason = null;
+
+    while (queue.length != 0) {
+        const data = queue.shift();
+        const freq = data.freq;
+        const lat = data.lat;
+        const lon = data.lon;
+        const dat = data.dat;
+        const seasonColor = seasonColorInfo(dat.getMonth());
+        const color = seasonColor.color;
+        const seasonName = seasonColor.name;
+
+        const movingTrace = {
+            type: "scattergeo",
+            mode: "markers",
+            lon: [lon],
+            lat: [lat],
+            marker: {
+                color: "white",
+                size: 20,
+                line: {
+                    color: color,
+                    width: 7,
+                },
+            },
+            hoverinfo: "skip",
+        };
+
+        Plotly.react("map", [...globalTraces ,movingTrace], globalLayout);
+
+        if (currentSeason != seasonName) {
+            currentSeason = seasonName;
+            speak(seasonName);
+            await sleep(400);
+        }
+        else
+        {
+            synth.triggerAttackRelease(freq, "100n");
+        }
+
+        // synth.triggerAttackRelease(freq, "100n");
+        await sleep(350);
+    }
+
+    resetPlot();
+    playingAnimation = false;
+    enableBtn("tone");
+    disableBtn("stop");
+}
