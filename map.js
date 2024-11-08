@@ -7,6 +7,8 @@ let globalMinLat = null;
 let globalMaxLat = null;
 let globalSeagullData = null;
 let playingAnimation = false;
+window.onresize = function(){ location.reload(); }
+
 
 // Data
 
