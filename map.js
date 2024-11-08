@@ -357,6 +357,13 @@ function latitudeToFreq(lat) {
 
 async function triggerTone() {
 
+    // Workaround
+
+    speak(""); // For some reason, the first speak never plays
+    await sleep(100);
+
+    // Global data
+
     const latitudes = globalSeagullData.latitude;
     const longitudes = globalSeagullData.longitude;
     const dates = globalSeagullData.date;
