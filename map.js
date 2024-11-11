@@ -282,6 +282,8 @@ async function buildPlot() {
     Plotly.newPlot("map", traces, layout, config);
 }
 
+
+
 function seasonColorInfo(monthNumber) {
     const winter = [12, 1, 2];
     const spring = [3, 4, 5];
@@ -370,6 +372,20 @@ document.getElementById("tone").addEventListener("click", () => {
 document.getElementById("stop").addEventListener("click", () => {
     queue = [];
 })
+
+document.getElementById("reset").addEventListener("click", () => {
+    resetMapPosition(); // Llama a la función de reseteado cuando se presiona el botón
+});
+
+function resetMapPosition() {
+    // Simula un clic en el botón de reseteo de Plotly usando su clase CSS
+    const resetButton = document.querySelector('.modebar-btn[data-title="Reset"]');
+    if (resetButton) {
+        resetButton.click();
+    }
+}
+
+
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));

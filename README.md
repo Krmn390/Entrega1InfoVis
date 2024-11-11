@@ -43,3 +43,9 @@ cómo afectó el producto final. ¿Realizaste modificaciones en la visualizació
 comentarios obtenidos? Si no realizaste cambios, explica por qué.
 
 * R: 
+
+
+
+
+añadir tiempo de viaje
+explicar un poco por qué viaja la gaviota
