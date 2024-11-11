@@ -9,6 +9,28 @@ let globalSeagullData = null;
 let playingAnimation = false;
 window.onresize = function(){ location.reload(); }
 
+// https://birdfact.com/articles/do-seagulls-migrate
+
+const summerText = `
+    En verano algunas especies de gaviota<br>
+    deciden migrar, motivadas principalmente<br>
+    por el frio y la escasez de comida.<br>
+`
+
+const autumnText = `
+    Algunas gaviotas eligen migrar<br>
+    al oeste de Africa, donde hay<br>
+    comida y aguas calidas.<br>
+`
+const winterText = `
+    Diferentes grupos de gaviotas se<br>
+    detienen en distintos lugares, no<br>
+    mantienen un lugar de descanso fijo.<br>
+`
+const springText = `
+    Cuando llega el momento, las gaviotas<br>
+    vuelven donde partieron.<br>
+`
 
 // Data
 
@@ -63,6 +85,18 @@ async function buildPlot() {
     for (let i = 0; i < data.latitude.length - 1; i++) {
         let dat = data.date[i].getMonth();
         let season = seasonColorInfo(dat);
+        let hoverText = "";
+
+        if (season.name === "verano") {
+            hoverText = summerText;
+        }
+        else if (season.name === "otoño") {
+            hoverText = autumnText;
+        } else if (season.name === "invierno") {
+            hoverText = winterText;
+        } else if (season.name === "primavera") {
+            hoverText = springText;
+        }
 
         let lineTrace = {
             type: "scattergeo",
@@ -70,8 +104,9 @@ async function buildPlot() {
             lat: [data.latitude[i], data.latitude[i + 1]],
             mode: "lines",
             //text: `Fecha: ${data.date[i].toLocaleDateString("en-GB")}`,
-            hovertemplate: `Longitud: ${parseFloat(data.longitude[i]).toFixed(2)}\n` +
-                            `Latitud: ${parseFloat(data.latitude[i]).toFixed(2)}\n` +
+            hovertemplate: hoverText + "<br>" +
+                            `Longitud: ${parseFloat(data.longitude[i]).toFixed(2)}<br>` +
+                            `Latitud: ${parseFloat(data.latitude[i]).toFixed(2)}<br>` +
                             `Fecha: ${data.date[i].toLocaleDateString("en-GB")}`,
             line: {
                 width: 4,
@@ -262,25 +297,25 @@ function seasonColorInfo(monthNumber) {
         r = 25;
         g = 75;
         b = 61;
-        name = "Invierno";
+        name = "invierno";
     }
     else if (spring.includes(monthNumber)) {
         r = 245;
         g = 196;
         b = 23;
-        name = "Primavera";
+        name = "primavera";
     }
     else if (summer.includes(monthNumber)) {
         r = 203;
         g = 37;
         b = 98;
-        name = "Verano";
+        name = "verano";
     }
     else if (autumn.includes(monthNumber)) {
         r = 73;
         g = 136;
         b = 229;
-        name = "Otoño";
+        name = "otoño";
     }
     else {
         console.log("Invalid month number");
