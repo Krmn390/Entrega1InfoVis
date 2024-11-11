@@ -1,3 +1,39 @@
+// Global
+
+let globalTraces = null;
+let globalLayout = null
+const synth = new Tone.Synth().toDestination();
+let globalMinLat = null;
+let globalMaxLat = null;
+let globalSeagullData = null;
+let playingAnimation = false;
+window.onresize = function(){ location.reload(); }
+
+// https://birdfact.com/articles/do-seagulls-migrate
+
+const summerText = `
+    En verano algunas especies de gaviota<br>
+    deciden migrar, motivadas principalmente<br>
+    por el frio y la escasez de comida.<br>
+`
+
+const autumnText = `
+    Algunas gaviotas eligen migrar<br>
+    al oeste de Africa, donde hay<br>
+    comida y aguas calidas.<br>
+`
+const winterText = `
+    Diferentes grupos de gaviotas se<br>
+    detienen en distintos lugares, no<br>
+    mantienen un lugar de descanso fijo.<br>
+`
+const springText = `
+    Cuando llega el momento, las gaviotas<br>
+    vuelven donde partieron.<br>
+`
+
+// Data
+
 async function fetchData() {
     const response = await fetch("bird_migration_v4.csv");
     const data = await response.text();
@@ -6,257 +42,428 @@ async function fetchData() {
 
     const latitude = [];
     const longitude = [];
-    const speed = [];
+    const date = []
 
     rows.forEach(row => {
         const cols = row.split(",");
         const lat = parseFloat(cols[3]);
         const lon = parseFloat(cols[4]);
-        const spd = parseFloat(cols[5]);
+        const dat = (new Date(cols[1]));
 
-        // Asegúrate de que los valores sean numéricos
-        if (!isNaN(lat) && !isNaN(lon) && !isNaN(spd)) {
+        if (!isNaN(lat) && !isNaN(lon) && !isNaN(dat)) {
             latitude.push(lat);
             longitude.push(lon);
-            speed.push(spd);
+            date.push(dat);
         }
     });
 
-    return { latitude, longitude, speed };
+    const seagullData = {
+        latitude,
+        longitude,
+        date
+    };
+    
+    globalSeagullData = seagullData;
+
+    return seagullData;
 }
 
-fetchData().then(data => {
+// Map
+
+async function buildPlot() {
+
+    const data = await fetchData();
+
     const traces = [];
-    const minSpeed = Math.min(...data.speed);
-    const maxSpeed = Math.max(...data.speed);
-    const minLong = Math.min(...data.longitude);
-    const maxLong = Math.max(...data.longitude);
+    const minLon = Math.min(...data.longitude);
+    const maxLon = Math.max(...data.longitude);
     const minLat = Math.min(...data.latitude);
     const maxLat = Math.max(...data.latitude);
-    const arrowAreas=[];
+    globalMinLat = minLat;
+    globalMaxLat = maxLat;
 
-
-    // // Evita división por cero ajustando el rango
-    // if (minSpeed === maxSpeed) {
-    //     minSpeed -= 1;
-    // }
-
-    // Crear trazos para las líneas de migración
     for (let i = 0; i < data.latitude.length - 1; i++) {
-        let speed = data.speed[i];
-        let color = getColorForSpeedContinuous(speed, minSpeed, maxSpeed);
+        let dat = data.date[i].getMonth();
+        let season = seasonColorInfo(dat);
+        let hoverText = "";
+
+        if (season.name === "verano") {
+            hoverText = summerText;
+        }
+        else if (season.name === "otoño") {
+            hoverText = autumnText;
+        } else if (season.name === "invierno") {
+            hoverText = winterText;
+        } else if (season.name === "primavera") {
+            hoverText = springText;
+        }
 
         let lineTrace = {
             type: "scattergeo",
             lon: [data.longitude[i], data.longitude[i + 1]],
             lat: [data.latitude[i], data.latitude[i + 1]],
             mode: "lines",
+            //text: `Fecha: ${data.date[i].toLocaleDateString("en-GB")}`,
+            hovertemplate: hoverText + "<br>" +
+                            `Longitud: ${parseFloat(data.longitude[i]).toFixed(2)}<br>` +
+                            `Latitud: ${parseFloat(data.latitude[i]).toFixed(2)}<br>` +
+                            `Fecha: ${data.date[i].toLocaleDateString("en-GB")}`,
             line: {
                 width: 4,
-                color: color
-            }
+                color: season.color
+            },
+            hoverlabel: {
+                font: {
+                    size: 20,
+                }
+            },
         };
+
+        if (i == 1) {
+            let offsetLon = 1.5;
+            let offsetLat = -0.5;
+            let textTrace = {
+                type: "scattergeo",
+                mode: "markers+text",
+                lon: [data.longitude[i] + offsetLon],
+                lat: [data.latitude[i] + offsetLat],
+                text: ["Punto de partida (verano)"],
+                textposition: "middle right",
+                marker: {
+                    color: season.color,
+                    size: 8,
+                },
+                textfont: {
+                    size: 17
+                },
+                hoverinfo: "skip",
+            };
+            traces.push(textTrace);
+        }
+
+        if (i == 10) {
+            let offsetLon = -1.5;
+            let offsetLat = 0;
+            let textTrace = {
+                type: "scattergeo",
+                mode: "markers+text",
+                lon: [data.longitude[i] + offsetLon],
+                lat: [data.latitude[i] + offsetLat],
+                text: ["Migración al sur (otoño)"],
+                textposition: "middle left",
+                marker: {
+                    color: season.color,
+                    size: 8,
+                },
+                textfont: {
+                    size: 17
+                },
+                hoverinfo: "skip",
+            };
+            traces.push(textTrace);
+        }
+
+        if (i == 45) {
+            let offsetLon = 1.5;
+            let offsetLat = 0;
+            let textTrace = {
+                type: "scattergeo",
+                mode: "markers+text",
+                lon: [data.longitude[i] + offsetLon],
+                lat: [data.latitude[i] + offsetLat],
+                text: ["Sector objetivo (invierno)"],
+                textposition: "middle right",
+                marker: {
+                    color: season.color,
+                    size: 8,
+                },
+                textfont: {
+                    size: 17
+                },
+                hoverinfo: "skip",
+            };
+            traces.push(textTrace);
+        }
+
+        if (i == 75) {
+            let offsetLon = 1.5;
+            let offsetLat = 0;
+            let textTrace = {
+                type: "scattergeo",
+                mode: "markers+text",
+                lon: [data.longitude[i] + offsetLon],
+                lat: [data.latitude[i] + offsetLat],
+                text: ["Migración al norte (primavera)"],
+                textposition: "middle right",
+                marker: {
+                    color: season.color,
+                    size: 8,
+                },
+                textfont: {
+                    size: 17
+                },
+                hoverinfo: "skip",
+            };
+            traces.push(textTrace);
+        }
 
         traces.push(lineTrace);
 
-        // Agregar flechas manualmente
-        if (i % 2 == 0) {
-            const [arrowTrace, arrowlimits] = createArrowTrace(
-                data.longitude[i],
-                data.latitude[i],
-                data.longitude[i + 1],
-                data.latitude[i + 1],
-                color
-            );
-
-            let overlapping = false;
-
-            // Verificar si la flecha se solapa con áreas anteriores
-            for (let ocupiedArea of arrowAreas) {
-                if (
-                    arrowlimits[0] < ocupiedArea[2] &&
-                    arrowlimits[2] > ocupiedArea[0] &&
-                    arrowlimits[1] < ocupiedArea[3] &&
-                    arrowlimits[3] > ocupiedArea[1]
-                ) {
-                    overlapping = true;
-                    break;  // Si hay un solapamiento, no hace falta seguir verificando
-                }
-            }
-
-            // Solo agregar la flecha si no se solapa con otras áreas
-            if (!overlapping) {
-                arrowAreas.push(arrowlimits);
-                traces.push(arrowTrace);
-            }
-        }
-
     }
 
-    // Trace adicional para la barra de colores (colorbar)
-    const lowSpeed = minSpeed.toFixed(2);
-    const midSpeed = ((minSpeed + maxSpeed) / 2).toFixed(2);
-    const highSpeed = maxSpeed.toFixed(2);
-
-    // Trace adicional para la barra de colores (colorbar)
-    const colorScaleTrace = {
-        type: "scattergeo",
-        mode: "markers",
-        lat: [0], // Latitud arbitraria para que el colorbar sea independiente
-        lon: [0], // Longitud arbitraria
-        marker: {
-            size: 0.1,  // Tamaño pequeño para no interferir
-            color: [lowSpeed, highSpeed],  // Rango de colores
-            cmin: lowSpeed,
-            cmax: highSpeed,
-            colorscale: [
-                [0, 'rgb(255, 153, 21)'],  // Color para velocidad baja
-                [1, 'rgb(0, 0, 255)']       // Color para velocidad alta
-            ],
-            colorbar: {
-                title: 'Velocidad',
-                titleside: 'top',
-                titlefont: {
-                    size: 18,        // Tamaño de la fuente
-                    family: 'Arial', // Familia de la fuente
-                    weight: 'bold'   // Estilo en negrita
-                },
-                ticksuffix: ' km/h',  // Unidades de velocidad
-                len: 0.5,  // Longitud de la barra de colores
-                tickvals: [lowSpeed, midSpeed, highSpeed],  // Etiquetas de los puntos medios
-                ticktext: [`Baja (${lowSpeed} mph)`, `Media (${midSpeed} mph)`, `Alta (${highSpeed} mph)`],  // Etiquetas personalizadas
-                x: 0.75,  // Posición horizontal
-            }
-        },
-        showlegend: false  // No muestra leyenda porque ya tiene el colorbar
-    };
-
-    traces.push(colorScaleTrace);
+    globalTraces = traces;
 
     const layout = {
         title: "Migración de Gaviota",
         titlefont: {
-            size: 24,
+            size: 40,
             family: "Arial, sans-serif"
         },
-        annotations: [{
-            text: "Velocidad y trayectoria de una gaviota en Europa y África",
-              font: {
-              size: 20,
-              color: 'rgb(116, 101, 130)',
+        annotations: [
+            {
+                text: "Trayectoria de una gaviota: Agosto-Abril",
+                font: {
+                    size: 25,
+                    color: 'rgb(116, 101, 130)',
+                },
+                showarrow: false,
+                align: 'center',
+                x: 0.5,
+                y: 1.1,
             },
-            showarrow: false,
-            align: 'center',
-            x: 0.5,
-            y: 1.1,
-          }],
+        ],
         showlegend: false,
+        legend: {
+            x: 0.5,
+            y: 0.05,
+            xanchor: "center",
+            yanchor: "center",
+            font: {
+                size: 20,
+            },
+            borderwidth: 1,
+            bordercolor: 'black',
+        },
         geo: {
             scope: "world",
             projection: {
-                type: "azimuthal equal area",
-                scale: 11
+                type: "mercator",
+                scale: 10
             },
             center: {
-                lon: (minLong + maxLong)/2,
+                lon: (minLon + maxLon)/2,
                 lat: (minLat + maxLat)/2
             },
             showland: true,
-            landcolor: 'rgb(220,220,220)',
+            landcolor: 'rgb(255,255,255)',
             countrycolor: 'rgb(255, 255, 255)',
             showcountries: true,
             showcoastlines: true,
-            showframe: true,
-            fitbounds: false,  // Desactiva ajuste automático del zoom
+            showframe: false,
+            fitbounds: false,
             dragmode: false,
-            zoom: false,
+            zoom: true,
         },
         margin: {
-            l: 50,  // Ajusta los márgenes para que el colorbar no afecte el mapa
+            l: 50, 
             r: 50,
             t: 150,
             b: 50
         },
-        // annotations: [{
-        //     x: 0,
-        //     y: 0,
-        //     xref: "paper",
-        //     yref: "paper",
-        //     text: 'This scatter plot displays the locations of major global cities, highlighting their geographic distribution.',
-        //     showarrow: false,
-        //     font: {
-        //         size: 12,
-        //         color: 'black'
-        //     }
-        // }]
     };
 
+    globalLayout = layout;
+
     const config = {
-        staticPlot: true  // Desactiva todas las interacciones
+        displayModeBar: true,
+        modeBarButtonsToRemove: ["pan2d", "select2d", "lasso2d"],
     };
 
     Plotly.newPlot("map", traces, layout, config);
-});
-
-
-// Función para obtener el color continuo basado en la velocidad
-function getColorForSpeedContinuous(speed, minSpeed, maxSpeed) {
-    const minR = 0;
-    const minG = 0;
-    const minB = 255;
-    const maxR = 255;
-    const maxG = 153;
-    const maxB = 21;
-    const ratio = 1-(speed - minSpeed) / (maxSpeed - minSpeed);
-
-    const r = minR + (maxR - minR) * ratio;
-    const g = minG + (maxG - minG) * ratio;
-    const b = minB + (maxB - minB) * ratio;
-
-    return `rgb(${r}, ${g}, ${b})`;
 }
 
-// Función para crear una flecha manualmente con ángulos de 30 grados respecto a la línea de trayectoria
-function createArrowTrace(lon1, lat1, lon2, lat2, color) {
-    const arrowScale = 0.4;  // Escala para el tamaño de la flecha
-    const angleInRadians = 30 * (Math.PI / 180);  // Convertimos 30 grados a radianes
+function seasonColorInfo(monthNumber) {
+    const winter = [12, 1, 2];
+    const spring = [3, 4, 5];
+    const summer = [6, 7, 8];
+    const autumn = [9, 10, 11];
 
-    // Diferencias en longitudes y latitudes (dirección del segmento)
-    const dx = lon2 - lon1;
-    const dy = lat2 - lat1;
-    const length = Math.sqrt(dx * dx + dy * dy);  // Longitud del segmento
-    const normDx = (dx / length) * arrowScale;  // Normalizamos y escalamos la dirección en x
-    const normDy = (dy / length) * arrowScale;  // Normalizamos y escalamos la dirección en y
+    let r = 0;
+    let g = 0;
+    let b = 0;
+    let name = "";
 
-    // Ahora aplicamos una rotación de 30 grados para la base de la flecha (triángulo)
-    const lonArrowLeft = lon2 - (normDx * Math.cos(angleInRadians) - normDy * Math.sin(angleInRadians));
-    const latArrowLeft = lat2 - (normDx * Math.sin(angleInRadians) + normDy * Math.cos(angleInRadians));
+    if (winter.includes(monthNumber)) {
+        r = 25;
+        g = 75;
+        b = 61;
+        name = "invierno";
+    }
+    else if (spring.includes(monthNumber)) {
+        r = 245;
+        g = 196;
+        b = 23;
+        name = "primavera";
+    }
+    else if (summer.includes(monthNumber)) {
+        r = 203;
+        g = 37;
+        b = 98;
+        name = "verano";
+    }
+    else if (autumn.includes(monthNumber)) {
+        r = 73;
+        g = 136;
+        b = 229;
+        name = "otoño";
+    }
+    else {
+        console.log("Invalid month number");
+    }
 
-    const lonArrowRight = lon2 - (normDx * Math.cos(-angleInRadians) - normDy * Math.sin(-angleInRadians));
-    const latArrowRight = lat2 - (normDx * Math.sin(-angleInRadians) + normDy * Math.cos(-angleInRadians));
+    let color = `rgb(${r}, ${g}, ${b})`;
 
-    // Creamos el triángulo de la flecha con 3 puntos
-    const lonArrow = [lonArrowLeft, lon2, lonArrowRight];  // Coordenadas longitud de los 3 puntos
-    const latArrow = [latArrowLeft, lat2, latArrowRight];  // Coordenadas latitud de los 3 puntos
+    return {color, name};
 
-    const arrowWidth = 4;  // Ancho de la flecha
+}
 
-    return [
+function resetPlot() {
+    Plotly.react("map", globalTraces, globalLayout);
+}
+
+buildPlot();
+
+// Text to speech
+
+function speak(text) {
+    speechSynthesis.cancel()
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "es-ES";
+    utterance.rate = 0.7;
+    window.speechSynthesis.speak(utterance);
+}
+
+// Tone
+
+let queue = [];
+
+function disableBtn(id) {
+    document.getElementById(id).disabled = true;
+}
+
+function enableBtn(id) {
+    document.getElementById(id).disabled = false;
+} 
+
+document.getElementById("tone").addEventListener("click", () => {
+    if (Tone.context.state !== "running") {
+        Tone.start();
+    }
+    if (!playingAnimation) {
+        playingAnimation = true;
+        disableBtn("tone");
+        enableBtn("stop");
+        triggerTone();
+    }
+})
+
+document.getElementById("stop").addEventListener("click", () => {
+    queue = [];
+})
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function proportion(value, min, max, offset) {
+    return ((value - min) / (max - min)) + offset;
+}
+
+function latitudeToFreq(lat) {
+    const minFreq = 300;
+    const maxFreq = 500;
+    const minLat = globalMinLat;
+    const maxLat = globalMaxLat;
+
+    const latProp = proportion(lat, minLat, maxLat, 0);
+    const freqStep = (maxFreq - minFreq) * latProp;
+    return minFreq + freqStep;
+}
+
+async function triggerTone() {
+
+    // Workaround
+
+    speak(""); // For some reason, the first speak never plays
+    await sleep(100);
+
+    // Global data
+
+    const latitudes = globalSeagullData.latitude;
+    const longitudes = globalSeagullData.longitude;
+    const dates = globalSeagullData.date;
+
+    // Insert frequencies to play in queue
+
+    for (let i = 0; i < 90; i+=2) {
+        const freqToPlay = latitudeToFreq(latitudes[i]);
+        const dataToQueue = {
+            freq: freqToPlay,
+            lat: latitudes[i],
+            lon: longitudes[i],
+            dat: dates[i],
+        }
+        queue.push(dataToQueue);
+    }
+
+    // Play frequencies in queue
+
+    let currentSeason = null;
+
+    while (queue.length != 0) {
+        const data = queue.shift();
+        const freq = data.freq;
+        const lat = data.lat;
+        const lon = data.lon;
+        const dat = data.dat;
+        const seasonColor = seasonColorInfo(dat.getMonth());
+        const color = seasonColor.color;
+        const seasonName = seasonColor.name;
+
+        const movingTrace = {
+            type: "scattergeo",
+            mode: "markers",
+            lon: [lon],
+            lat: [lat],
+            marker: {
+                color: "white",
+                size: 20,
+                line: {
+                    color: color,
+                    width: 7,
+                },
+            },
+            hoverinfo: "skip",
+        };
+
+        Plotly.react("map", [...globalTraces ,movingTrace], globalLayout);
+
+        if (currentSeason != seasonName) {
+            currentSeason = seasonName;
+            speak(seasonName);
+            await sleep(400);
+        }
+        else
         {
-        type: "scattergeo",
-        mode: "lines",  // Usamos líneas para dibujar el triángulo (flecha)
-        lon: lonArrow,
-        lat: latArrow,
-        line: {
-            width: arrowWidth,
-            color: color  // El mismo color de la línea de trayectoria
-        },
-        showlegend: false
-    }, [Math.min(lonArrowLeft, lonArrowRight)-arrowWidth*0.1, 
-        Math.min(latArrowLeft, latArrowRight)-arrowWidth*0.1, 
-        Math.max(lonArrowLeft, lonArrowRight)+arrowWidth*0.1, 
-        Math.max(latArrowLeft, latArrowRight)+arrowWidth*0.1]
-]; // Devuelve los límites de la flecha
-}
+            synth.triggerAttackRelease(freq, "100n");
+        }
 
-// test
+        // synth.triggerAttackRelease(freq, "100n");
+        await sleep(350);
+    }
+
+    resetPlot();
+    playingAnimation = false;
+    enableBtn("tone");
+    disableBtn("stop");
+}
