@@ -16,11 +16,11 @@ body {
     flex: 1;
     width: 100%;
     height: 100%;
-    cursor: pointer; /* Cambia el cursor al pasar por encima del mapa */
+    cursor: default  ; /* Cambia el cursor al pasar por encima del mapa */
 }
 
 #map:hover {
-    cursor: crosshair; /* Cambia el cursor cuando el mouse está sobre el mapa */
+    cursor: pointer; /* Cambia el cursor cuando el mouse está sobre el mapa */
 }
 
 
